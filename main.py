@@ -1,32 +1,64 @@
 import pandas
-import io_utilities
-import post_processing
+import src.io_utilities as io_utilities
+import src.tools as tools
+import src.visualize as visualize
 import statsmodels.api as statistics
 import scipy
 
 # Set up logging
 logger = io_utilities.init_logger()
-
 logger.info("Data postprocessing pipeline started...")
 
 # select file
-file = io_utilities.select_file()
-logger.info("File selected: " + file)
+result_file = io_utilities.select_file()
+logger.info("Result file selected: " + result_file)
 
-# create dataframe
-data_frame = pandas.read_csv(file, sep = io_utilities.guess_delimiter(file))
-logger.info("Data frame created.")
+predictors_file = io_utilities.select_file()
+logger.info("Predictors file selected: " + predictors_file)
 
-# basic info
-logger.info('\n' + str(data_frame.describe()))
+target_file = io_utilities.select_file()
+logger.info("Target file selected: " + target_file)
 
-# residuals plot
-post_processing.residuals_plot(data_frame.iloc[:, 0], data_frame.iloc[:, 2])
+# create dataframes
+regression_result = pandas.read_csv(result_file, sep = io_utilities.guess_delimiter(result_file))
+# TODO: remove last row
+regression_result = regression_result.drop(regression_result.index[-1])
+logger.info("Regression result data frame created.")
 
+predictors = pandas.read_csv(predictors_file, sep = io_utilities.guess_delimiter(predictors_file))
+logger.info("Predictors data frame created.")
+
+target = pandas.read_csv(target_file, sep = io_utilities.guess_delimiter(target_file))
+logger.info("Predictors data frame created.")
+
+# elastic net regression
+logger.info("Elastic net regression started...")
+elastic_net = tools.elastic_net_regression(predictors, target)
+
+# ****************************************************** basic info ********************************************************
+logger.info('\n' + str(regression_result.describe()))
+# ***************************************************** correlation ********************************************************
+logger.info('\n' + str(predictors.corr()))
+# *****************************************************  residuals  ********************************************************
+visualize.residuals_plot(regression_result.iloc[:, 0], regression_result.iloc[:, 2])
+# residuals independence test
+logger.info("Residuals independence test:")
+durbin_watson_value = statistics.stats.stattools.durbin_watson(regression_result.iloc[:, 2])
+logger.info("Durbin-Watson test: " + str(durbin_watson_value))
+# ************************************************ residuals normality *****************************************************
 # normality test
-jb_value, p_value, skewness, kurtosis = statistics.stats.stattools.jarque_bera(data_frame.iloc[:, 2])
-k2, p_value = scipy.stats.shapiro(data_frame.iloc[:, 2])
-result = scipy.stats.anderson(data_frame.iloc[:, 2])
+logger.info("Normality tests:")
+jb_value, p_value, skewness, kurtosis = statistics.stats.stattools.jarque_bera(regression_result.iloc[:, 2])
+k2, p_value = scipy.stats.shapiro(regression_result.iloc[:, 2])
+result = scipy.stats.anderson(regression_result.iloc[:, 2])
 logger.info("Jarque-Bera test: " + str(jb_value) + " p-value: " + str(p_value) + " skewness: " + str(skewness) + " kurtosis: " + str(kurtosis))
 logger.info("Shapiro-Wilk test: " + str(k2) + " p-value: " + str(p_value))
 logger.info("Anderson-Darling test: " + str(result))
+# ************************************************* Heteroscedasticity *****************************************************
+# qq plot
+visualize.qq_residuals_plot(regression_result.iloc[:, 2])
+# Heteroscedasticity tests
+logger.info("Heteroscedasticity tests:")
+test = statistics.stats.het_breuschpagan(regression_result.iloc[:, 2], predictors)
+labels = ['LM Statistic', 'LM-Test p-value', 'F-Statistic', 'F-Test p-value']
+logger.info("Breusch-Pagan test: " + str(dict(zip(labels, test))))

@@ -23,11 +23,11 @@ def init_logger():
     """
     
     # Set up logging
-    logger = logging.getLogger('DATA PREPROCESSING')
+    logger = logging.getLogger('DATA POSTPROCESSING')
     logger.setLevel(logging.INFO)
 
     # Create a file handler
-    handler = logging.FileHandler('data_preprocessing.log')
+    handler = logging.FileHandler('log/data_postprocessing.log')
     handler.setLevel(logging.INFO)
 
     # Create a console handler
