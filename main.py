@@ -1,15 +1,16 @@
-import pandas
 import src.io_utilities as io_utilities
 import src.tools as tools
 import src.visualize as visualize
+import src.source as source
+import pandas
 import statsmodels.api as statistics
 import scipy
 
-# Set up logging
+# ************************************************** Set up logging ******************************************************
 logger = io_utilities.init_logger()
 logger.info("Data postprocessing pipeline started...")
 
-# select file
+# *************************************************** Select files *******************************************************
 result_file = io_utilities.select_file()
 logger.info("Result file selected: " + result_file)
 
@@ -19,7 +20,7 @@ logger.info("Predictors file selected: " + predictors_file)
 target_file = io_utilities.select_file()
 logger.info("Target file selected: " + target_file)
 
-# create dataframes
+# ************************************************* Create dataframes ***************************************************
 regression_result = pandas.read_csv(result_file, sep = io_utilities.guess_delimiter(result_file))
 # TODO: remove last row
 regression_result = regression_result.drop(regression_result.index[-1])
@@ -35,17 +36,17 @@ logger.info("Predictors data frame created.")
 logger.info("Elastic net regression started...")
 elastic_net = tools.elastic_net_regression(predictors, target)
 
-# ****************************************************** basic info ********************************************************
-logger.info('\n' + str(regression_result.describe()))
-# ***************************************************** correlation ********************************************************
+# ****************************************************** Basic info ********************************************************
+source.log_basic_info(regression_result, "Regression result")
+# ***************************************************** Correlation ********************************************************
 logger.info('\n' + str(predictors.corr()))
-# *****************************************************  residuals  ********************************************************
+# ************************************************  Residuals analyses  ****************************************************
 visualize.residuals_plot(regression_result.iloc[:, 0], regression_result.iloc[:, 2])
 # residuals independence test
 logger.info("Residuals independence test:")
 durbin_watson_value = statistics.stats.stattools.durbin_watson(regression_result.iloc[:, 2])
 logger.info("Durbin-Watson test: " + str(durbin_watson_value))
-# ************************************************ residuals normality *****************************************************
+# ************************************************ Residuals normality *****************************************************
 # normality test
 logger.info("Normality tests:")
 jb_value, p_value, skewness, kurtosis = statistics.stats.stattools.jarque_bera(regression_result.iloc[:, 2])
