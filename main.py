@@ -46,13 +46,22 @@ logger.info("Target data frame created with shape: " + str(target.shape))
 # ****************************************************** Basic info ********************************************************
 
 logger.info(tools.get_header_separator() + 'C++ EVOREGR REGRESSION RESULT BASIC INFO:' + '\n' + str(result.describe()))
+logger.info("OLS result: \n" + str(source.get_OLS_result(predictor, target, 0.2)))
 
-source.elastic_net_regression(predictor, target)
+# ************************************************** R2 prediction *********************************************************
+
+logger.info(tools.get_header_separator() + "R2 PREDICTION:")
+logger.info("R2 prediction: " + str(source.get_R2pred(predictor, target)))
 
 # **************************************  Pearson correlation coefficient matrix *******************************************
 
 logger.info(tools.get_header_separator() + "COVARIANCE MATRIX:")
 logger.info("Covariance matrix: \n" + str(dataset.corr()))
+
+# ************************************************  Variance inflation factor **********************************************
+
+logger.info(tools.get_header_separator() + "VARIANCE INFLATION FACTORS:")
+logger.info("VIF-s: \n" + str(source.calculate_vifs(predictor)))
 
 # ************************************************  Residuals analyses  ****************************************************
 
